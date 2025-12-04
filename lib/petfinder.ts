@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { mockPets } from "@/data/mock-pets";
 
 const PETFINDER_API_URL = 'https://api.petfinder.com/v2';
 
@@ -69,8 +70,23 @@ export async function fetchFromPetfinder(endpoint: string, params: Record<string
   }
 }
 
+
+
 export async function getAnimals(params: Record<string, string> = {}) {
-  return fetchFromPetfinder('/animals', params);
+  try {
+    return await fetchFromPetfinder('/animals', params);
+  } catch (error) {
+    console.warn("Falling back to mock data due to API error:", error);
+    return { 
+      animals: mockPets, 
+      pagination: { 
+        count: mockPets.length, 
+        total_count: mockPets.length, 
+        current_page: 1, 
+        total_pages: 1 
+      } 
+    };
+  }
 }
 
 export async function getAnimal(id: string) {

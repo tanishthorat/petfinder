@@ -3,14 +3,15 @@ import { getAnimals } from "@/lib/petfinder";
 import SearchClient from "./SearchClient";
 
 interface SearchPageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const resolvedSearchParams = await searchParams;
   const params: Record<string, string> = {};
   
   // Convert searchParams to simple object for API
-  Object.entries(searchParams).forEach(([key, value]) => {
+  Object.entries(resolvedSearchParams).forEach(([key, value]) => {
     if (typeof value === 'string') {
       params[key] = value;
     } else if (Array.isArray(value)) {

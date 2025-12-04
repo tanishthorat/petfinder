@@ -54,24 +54,26 @@ function mapPrismaPetToType(p: any): PetType {
   } as any; // Casting to any to avoid strict type mismatch for now
 }
 
-export async function getFeed() {
-  try {
-    // 1. Fetch from Petfinder
-    let apiPets: any[] = [];
-    try {
-      const data = await getAnimals({ limit: "20" });
-      apiPets = data.animals || [];
-    } catch (e) {
-      console.error("Petfinder API failed:", e);
-    }
+import { mockPets } from "@/data/mock-pets";
 
+export async function getFeed() {
+  // 1. Fetch from Mock Data (instead of API)
+  let apiPets: any[] = mockPets;
+  let dbPets: any[] = [];
+
+  try {
     // 2. Fetch from Local DB (User posted pets)
-    const dbPets = await prisma.pet.findMany({
+    dbPets = await prisma.pet.findMany({
       where: { source: "USER", status: "AVAILABLE" },
       orderBy: { createdAt: "desc" },
       take: 20,
     });
+  } catch (error) {
+    console.warn("Database unreachable, skipping local pets:", error);
+    // Continue without DB pets
+  }
 
+  try {
     // 3. Map DB pets to the same structure
     const mappedDbPets = dbPets.map(mapPrismaPetToType);
 
@@ -79,10 +81,16 @@ export async function getFeed() {
     // Put DB pets first to give them visibility
     return [...mappedDbPets, ...apiPets];
   } catch (error) {
-    console.error("Error fetching feed:", error);
-    return [];
+    console.error("Error processing feed:", error);
+    // Fallback to just apiPets if mapping fails
+    return apiPets;
   }
 }
+
+// --- In-Memory Fallback Store ---
+const globalForMatches = global as unknown as { mockMatchesStore: any[] };
+if (!globalForMatches.mockMatchesStore) globalForMatches.mockMatchesStore = [];
+const mockMatchesStore = globalForMatches.mockMatchesStore;
 
 export async function likePet(petData: any) {
   const { userId } = await auth();
@@ -90,12 +98,7 @@ export async function likePet(petData: any) {
 
   try {
     // 1. Ensure Pet exists in DB
-    // If it's a Petfinder pet, it might not be in our DB yet.
     let petId = petData.id.toString();
-    
-    // Check if it's an API pet (numeric ID usually) or DB pet (CUID string)
-    // Or check if we passed a source flag.
-    // Let's try to find it by petfinderId if it looks like one, or just ID.
     
     let dbPet = await prisma.pet.findFirst({
       where: {
@@ -107,14 +110,12 @@ export async function likePet(petData: any) {
     });
 
     if (!dbPet) {
-      // It's likely a Petfinder pet that hasn't been saved yet.
-      // Create it.
       dbPet = await prisma.pet.create({
         data: {
           petfinderId: petId,
           source: "PETFINDER",
           name: petData.name,
-          species: petData.type || "Dog", // Default
+          species: petData.type || "Dog",
           breed: petData.breeds?.primary || "Unknown",
           ageString: petData.age,
           gender: petData.gender,
@@ -124,7 +125,7 @@ export async function likePet(petData: any) {
           location: `${petData.contact?.address?.city}, ${petData.contact?.address?.state}`,
           organization: petData.organization_id,
           status: petData.status,
-          attributes: [], // Map attributes if needed
+          attributes: [],
         }
       });
     }
@@ -154,8 +155,29 @@ export async function likePet(petData: any) {
     revalidatePath("/matches");
     return { success: true, message: "Matched!" };
   } catch (error) {
-    console.error("Error liking pet:", error);
-    return { success: false, error: "Failed to like pet" };
+    console.warn("Database error in likePet, falling back to in-memory store:", error);
+    
+    // Fallback: Save to in-memory store
+    const existingMatch = mockMatchesStore.find((m: any) => m.userId === userId && m.petId === petData.id);
+    if (existingMatch) {
+      return { success: true, message: "Already matched (Fallback)" };
+    }
+
+    mockMatchesStore.push({
+      id: `mock-match-${Date.now()}`,
+      userId,
+      petId: petData.id,
+      status: "LIKED",
+      createdAt: new Date(),
+      pet: {
+        ...petData,
+        images: petData.photos?.map((p: any) => p.full) || [],
+        location: `${petData.contact?.address?.city}, ${petData.contact?.address?.state}`,
+      }
+    });
+
+    revalidatePath("/matches");
+    return { success: true, message: "Matched! (Fallback)" };
   }
 }
 
@@ -179,8 +201,11 @@ export async function getMatches() {
 
     return matches;
   } catch (error) {
-    console.error("Error fetching matches:", error);
-    return [];
+    console.warn("Database error in getMatches, falling back to in-memory store:", error);
+    // Fallback: Filter from in-memory store
+    return mockMatchesStore
+      .filter((m: any) => m.userId === userId && m.status === "LIKED")
+      .sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 }
 

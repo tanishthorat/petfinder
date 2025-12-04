@@ -48,7 +48,7 @@ export default function LandingPage() {
             <motion.div variants={itemVariants} className="inline-block px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full text-primary font-semibold mb-6 shadow-sm border border-purple-100">
               🚀 #1 Pet Adoption Platform
             </motion.div>
-            <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+            <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold mb-6 text-indigo-600 leading-tight">
               Find your new <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
                 best friend
@@ -59,23 +59,8 @@ export default function LandingPage() {
               Connect with loving animals waiting for a home.
             </motion.p>
             
-            <motion.div variants={itemVariants} className="bg-white p-2 rounded-2xl shadow-xl border border-gray-100 flex flex-col md:flex-row gap-2 max-w-xl">
-              <Input 
-                classNames={{
-                  inputWrapper: "bg-gray-50 hover:bg-gray-100 shadow-none",
-                }}
-                placeholder="Search Terrier, Kitten, etc." 
-                startContent={<Search className="text-gray-400" size={20} />}
-                size="lg"
-              />
-              <Input 
-                classNames={{
-                  inputWrapper: "bg-gray-50 hover:bg-gray-100 shadow-none",
-                }}
-                placeholder="City, State or ZIP" 
-                startContent={<MapPin className="text-gray-400" size={20} />}
-                size="lg"
-              />
+            <motion.div variants={itemVariants} className="bg-white p-2 rounded-2xl flex flex-col md:flex-row gap-2">
+              
               <Button 
                 as={Link}
                 href="/swipe"
@@ -83,7 +68,7 @@ export default function LandingPage() {
                 size="lg" 
                 className="font-semibold shadow-lg shadow-primary/30"
               >
-                Search
+                Start Swiping
               </Button>
             </motion.div>
           </motion.div>
@@ -99,7 +84,7 @@ export default function LandingPage() {
               alt="Happy Dog"
               className="rounded-[3rem] shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500"
             />
-            <div className="absolute -bottom-10 -left-10 bg-white p-6 rounded-2xl shadow-xl animate-bounce">
+            <div className="absolute z-10 -bottom-10 -left-10 bg-white p-6 rounded-2xl shadow-xl animate-bounce">
               <div className="flex items-center gap-4">
                 <div className="bg-green-100 p-3 rounded-full">
                   <CheckCircle className="text-green-600" />

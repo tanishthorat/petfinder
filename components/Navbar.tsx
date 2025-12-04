@@ -13,6 +13,7 @@ import {
   NavbarMenuItem,
 } from "@nextui-org/react";
 import { Heart, Menu, X } from "lucide-react";
+import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -57,14 +58,21 @@ export const Navbar = () => {
       </NavbarContent>
 
       <NavbarContent justify="end">
-        <NavbarItem className="hidden lg:flex">
-          <Link href="/sign-in">Login</Link>
-        </NavbarItem>
-        <NavbarItem>
-          <Button as={Link} color="primary" href="/sign-up" variant="flat" className="font-semibold">
-            Sign Up
-          </Button>
-        </NavbarItem>
+        <SignedOut>
+          <NavbarItem className="hidden lg:flex">
+            <Link href="/sign-in">Login</Link>
+          </NavbarItem>
+          <NavbarItem>
+            <Button as={Link} color="primary" href="/sign-up" variant="flat" className="font-semibold">
+              Sign Up
+            </Button>
+          </NavbarItem>
+        </SignedOut>
+        <SignedIn>
+          <NavbarItem>
+            <UserButton afterSignOutUrl="/"/>
+          </NavbarItem>
+        </SignedIn>
       </NavbarContent>
 
       <NavbarMenu className="pt-6">
