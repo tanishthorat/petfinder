@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  image     String?
+  bio       String?
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matches   Match[]
+  messages  Message[]
+  pets      Pet[]    @relation("UserPets")
+}
+
+model Pet {
+  id          String   @id @default(cuid())
+  petfinderId String?  @unique // ID from Petfinder API
+  source      String   @default("USER") // USER or PETFINDER
+  
+  name        String
+  species     String   // Dog, Cat, etc.
+  breed       String
+  age         Int?     // Made optional as API might give string "Young" etc.
+  ageString   String?  // For API "Young", "Adult" etc.
+  gender      String
+  size        String
+  color       String?
+  attributes  String[] // Spayed/Neutered, House Trained, etc.
+  description String?
+  images      String[]
+  location    String
+  organization String? // Shelter Name
+  distance    Float?   // Distance in miles (mock)
+  status      String   @default("AVAILABLE") // AVAILABLE, ADOPTED, PENDING
+  shelterId   String?  // Optional: Link to a Shelter model if we add it later
+  ownerId     String?  // For user-posted pets
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  matches     Match[]
+  owner       User?    @relation("UserPets", fields: [ownerId], references: [id])
+}
+
+model Match {
+  id        String   @id @default(cuid())
+  userId    String
+  petId     String
+  status    String   @default("LIKED") // LIKED, PASSED, SUPERLIKED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+  pet       Pet      @relation(fields: [petId], references: [id])
+  messages  Message[]
+
+  @@unique([userId, petId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  matchId   String
+  senderId  String   // User ID or "SYSTEM" or Shelter ID
+  content   String
+  createdAt DateTime @default(now())
+
+  match     Match    @relation(fields: [matchId], references: [id])
+  user      User?    @relation(fields: [senderId], references: [id]) // Optional relation if sender is user
+}
