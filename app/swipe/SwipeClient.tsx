@@ -30,7 +30,7 @@ export default function SwipeClient({ initialPets }: SwipeClientProps) {
           if (result.success) {
             toast.success(`You liked ${petToRemove.name}!`);
           } else {
-            console.error(result.error);
+            console.error(result.message);
           }
         } catch (error) {
           console.error("Failed to like pet:", error);
