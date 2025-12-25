@@ -7,74 +7,174 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
-  email     String   @unique
-  name      String?
-  image     String?
-  bio       String?
-  location  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum Role {
+  adopter
+  owner
+  shelter
+  admin
+}
 
-  matches   Match[]
+enum Species {
+  dog
+  cat
+  bird
+  rabbit
+  other
+}
+
+enum Gender {
+  male
+  female
+}
+
+enum Size {
+  small
+  medium
+  large
+  extra_large
+}
+
+enum EnergyLevel {
+  low
+  medium
+  high
+}
+
+enum PetStatus {
+  available
+  pending
+  adopted
+  removed
+}
+
+enum SwipeDirection {
+  left
+  right
+}
+
+enum MatchStatus {
+  matched
+  contacted
+  meeting_scheduled
+  adopted
+  rejected
+}
+
+model User {
+  id              String   @id @default(uuid())
+  clerk_user_id   String   @unique
+  email           String   @unique
+  full_name       String
+  role            Role
+  profile_image_url String?
+  phone           String?
+  address         String?
+  location_lat    Decimal?
+  location_lng    Decimal?
+  bio             String?
+  preferences     Json?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  pets      Pet[]
+  swipes    Swipe[]
+  matches   Match[]   @relation("AdopterMatches")
+  ownerMatches Match[] @relation("OwnerMatches")
   messages  Message[]
-  pets      Pet[]    @relation("UserPets")
+  userPreferences UserPreferences?
 }
 
 model Pet {
-  id          String   @id @default(cuid())
-  petfinderId String?  @unique // ID from Petfinder API
-  source      String   @default("USER") // USER or PETFINDER
-  
-  name        String
-  species     String   // Dog, Cat, etc.
-  breed       String
-  age         Int?     // Made optional as API might give string "Young" etc.
-  ageString   String?  // For API "Young", "Adult" etc.
-  gender      String
-  size        String
-  color       String?
-  attributes  String[] // Spayed/Neutered, House Trained, etc.
-  description String?
-  images      String[]
-  location    String
-  organization String? // Shelter Name
-  distance    Float?   // Distance in miles (mock)
-  status      String   @default("AVAILABLE") // AVAILABLE, ADOPTED, PENDING
-  shelterId   String?  // Optional: Link to a Shelter model if we add it later
-  ownerId     String?  // For user-posted pets
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(uuid())
+  owner_id      String
+  name          String
+  species       Species
+  breed         String
+  age           Int      // in months
+  gender        Gender
+  size          Size
+  color         String?
+  description   String?
+  health_status String?
+  vaccination_status Boolean?
+  is_neutered   Boolean?
+  good_with_kids Boolean?
+  good_with_pets Boolean?
+  energy_level  EnergyLevel?
+  temperament   String[]
+  special_needs String?
+  location_lat  Decimal?
+  location_lng  Decimal?
+  location_address String?
+  status        PetStatus @default(available)
+  images        String[]
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
-  matches     Match[]
-  owner       User?    @relation("UserPets", fields: [ownerId], references: [id])
+  owner     User     @relation(fields: [owner_id], references: [id])
+  swipes    Swipe[]
+  matches   Match[]
+}
+
+model Swipe {
+  id         String         @id @default(uuid())
+  user_id    String
+  pet_id     String
+  direction  SwipeDirection
+  swiped_at  DateTime       @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+  pet  Pet  @relation(fields: [pet_id], references: [id])
+
+  @@unique([user_id, pet_id])
+  @@index([user_id, direction])
 }
 
 model Match {
-  id        String   @id @default(cuid())
-  userId    String
-  petId     String
-  status    String   @default("LIKED") // LIKED, PASSED, SUPERLIKED
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String      @id @default(uuid())
+  adopter_id   String
+  pet_id       String
+  owner_id     String
+  status       MatchStatus @default(matched)
+  matched_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id])
-  pet       Pet      @relation(fields: [petId], references: [id])
-  messages  Message[]
+  adopter User @relation("AdopterMatches", fields: [adopter_id], references: [id])
+  pet     Pet  @relation(fields: [pet_id], references: [id])
+  owner   User @relation("OwnerMatches", fields: [owner_id], references: [id])
+  messages Message[]
 
-  @@unique([userId, petId])
+  @@index([adopter_id, status])
+  @@index([owner_id, status])
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  matchId   String
-  senderId  String   // User ID or "SYSTEM" or Shelter ID
-  content   String
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  match_id   String
+  sender_id  String
+  message    String
+  read       Boolean  @default(false)
+  created_at DateTime @default(now())
 
-  match     Match    @relation(fields: [matchId], references: [id])
-  user      User?    @relation(fields: [senderId], references: [id]) // Optional relation if sender is user
+  match  Match @relation(fields: [match_id], references: [id])
+  sender User  @relation(fields: [sender_id], references: [id])
+
+  @@index([match_id, created_at])
+}
+
+model UserPreferences {
+  id             String    @id @default(uuid())
+  user_id        String    @unique
+  species        String[]
+  age_min        Int?
+  age_max        Int?
+  size           String[]
+  gender         String[]
+  distance_km    Int?
+  good_with_kids Boolean?
+  good_with_pets Boolean?
+  energy_level   String[]
+  updated_at     DateTime  @updatedAt
+
+  user User @relation(fields: [user_id], references: [id])
 }

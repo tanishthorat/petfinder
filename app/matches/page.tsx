@@ -1,9 +1,9 @@
 import React from "react";
-import { getMatches } from "@/app/actions";
-import MatchesList from "@/components/MatchesList";
+import { getMatches } from "@/app/actions/matches";
+import MatchesClient from "./MatchesClient";
 
 export default async function MatchesPage() {
   const matches = await getMatches();
 
-  return <MatchesList matches={matches as any} />;
+  return <MatchesClient matches={matches} />;
 }

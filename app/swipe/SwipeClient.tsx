@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { SwipeCard } from "@/components/SwipeCard";
-import { Pet } from "@/types";
 import { Button } from "@nextui-org/react";
-import { Heart, X, RotateCcw, MessageCircle, User, MapPin } from "lucide-react";
+import { X, Heart, RotateCcw, MapPin } from "lucide-react";
+import {SwipeCard} from "@/components/SwipeCard";
+import { Pet } from "@/types";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/supabase/auth-context";
 import { toast } from "sonner";
+import { recordSwipe } from "@/app/actions/pets";
 
 interface SwipeClientProps {
   initialPets: Pet[];
@@ -16,42 +17,30 @@ interface SwipeClientProps {
 export default function SwipeClient({ initialPets }: SwipeClientProps) {
   const [pets, setPets] = useState<Pet[]>(initialPets);
   const [lastRemovedPet, setLastRemovedPet] = useState<Pet | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const { user } = useUser();
 
-  const handleSwipe = async (direction: "left" | "right", id: number) => {
-    const petToRemove = pets.find((p) => p.id === id);
+  const handleSwipe = async (direction: "left" | "right") => {
+    const pet = pets[currentIndex];
+    if (!pet) return;
+
+    const petToRemove = pets.find((p) => p.id === pet.id);
     if (petToRemove) {
       setLastRemovedPet(petToRemove);
-      setPets((prev) => prev.filter((p) => p.id !== id));
+      setPets((prev) => prev.filter((p) => p.id !== pet.id));
 
       if (direction === "right") {
         try {
-          // Call the likes API to persist the like (Supabase)
-          const userId = user?.id;
-          // If Clerk user isn't loaded yet, fall back to server action via /app/actions
-          if (!userId) {
-            // best-effort: call server action by posting to `/api/likes` without header
-            await fetch('/api/likes', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ pet_id: String(petToRemove.id), action: 'like' })
-            });
-            toast.success(`You liked ${petToRemove.name}!`);
-          } else {
-            const res = await fetch('/api/likes', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
-              body: JSON.stringify({ pet_id: String(petToRemove.id), action: 'like' })
-            });
-            const json = await res.json();
-            if (res.ok) toast.success(`You liked ${petToRemove.name}!`);
-            else console.error('Error liking pet:', json);
-          }
+          // Call the server action to record the swipe
+          await recordSwipe(String(petToRemove.id), "right");
+          toast.success(`You liked ${petToRemove.name}!`);
         } catch (error) {
           console.error("Failed to like pet:", error);
         }
       }
     }
+
+    setCurrentIndex(currentIndex + 1);
   };
 
   const handleUndo = () => {
@@ -60,6 +49,16 @@ export default function SwipeClient({ initialPets }: SwipeClientProps) {
       setLastRemovedPet(null);
     }
   };
+
+  if (currentIndex >= pets.length) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center p-4">
+        <div className="text-6xl mb-4">🐾</div>
+        <h2 className="text-2xl font-bold mb-2 text-gray-900">No more pets to show</h2>
+        <p className="text-gray-600 mb-6">You've seen all the available pets that match your preferences. Check back later for new furry friends!</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-gray-50 overflow-hidden relative">
@@ -72,7 +71,7 @@ export default function SwipeClient({ initialPets }: SwipeClientProps) {
                 key={pet.id}
                 pet={pet}
                 active={index === pets.length - 1} // Only top card is active
-                onSwipe={(dir) => handleSwipe(dir, pet.id)}
+                onSwipe={(dir) => handleSwipe(dir)}
               />
             ))
           ) : (
@@ -113,7 +112,7 @@ export default function SwipeClient({ initialPets }: SwipeClientProps) {
           radius="full" 
           size="lg" 
           className="bg-white shadow-xl text-red-500 w-20 h-20 hover:scale-110 transition-transform border-4 border-transparent hover:border-red-100"
-          onPress={() => pets.length > 0 && handleSwipe("left", pets[pets.length - 1].id)}
+          onPress={() => pets.length > 0 && handleSwipe("left")}
         >
           <X size={40} />
         </Button>
@@ -123,7 +122,7 @@ export default function SwipeClient({ initialPets }: SwipeClientProps) {
           radius="full" 
           size="lg" 
           className="bg-white shadow-xl text-green-500 w-20 h-20 hover:scale-110 transition-transform border-4 border-transparent hover:border-green-100"
-          onPress={() => pets.length > 0 && handleSwipe("right", pets[pets.length - 1].id)}
+          onPress={() => pets.length > 0 && handleSwipe("right")}
         >
           <Heart size={40} fill="currentColor" />
         </Button>

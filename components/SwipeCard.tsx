@@ -17,7 +17,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ pet, onSwipe, active }) =>
   const [exitX, setExitX] = useState<number | null>(null);
   
   const x = useMotionValue(0);
-  const rotate = useTransform(x, [-200, 200], [-15, 15]);
+  const rotate = useTransform(x, [-200, 200], [-30, 30]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
   
   // Color overlays for swipe feedback

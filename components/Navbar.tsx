@@ -11,12 +11,22 @@ import {
   NavbarMenuToggle,
   NavbarMenu,
   NavbarMenuItem,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+  Avatar,
 } from "@nextui-org/react";
-import { Heart, Menu, X } from "lucide-react";
-import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { Heart, LogOut, User as UserIcon } from "lucide-react";
+import { useUser } from "@/lib/supabase/auth-context";
+import { useRouter } from "next/navigation";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import { toast } from "sonner";
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const { user, isLoading } = useUser();
+  const router = useRouter();
 
   const menuItems = [
     { name: "Home", href: "/" },
@@ -25,6 +35,14 @@ export const Navbar = () => {
     { name: "Map", href: "/map" },
     { name: "Community", href: "/community" },
   ];
+
+  const handleSignOut = async () => {
+    const supabase = getSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    toast.success("Signed out successfully");
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <NextUINavbar 
@@ -58,21 +76,55 @@ export const Navbar = () => {
       </NavbarContent>
 
       <NavbarContent justify="end">
-        <SignedOut>
-          <NavbarItem className="hidden lg:flex">
-            <Link href="/sign-in">Login</Link>
-          </NavbarItem>
-          <NavbarItem>
-            <Button as={Link} color="primary" href="/sign-up" variant="flat" className="font-semibold">
-              Sign Up
-            </Button>
-          </NavbarItem>
-        </SignedOut>
-        <SignedIn>
-          <NavbarItem>
-            <UserButton afterSignOutUrl="/"/>
-          </NavbarItem>
-        </SignedIn>
+        {!isLoading && (
+          <>
+            {!user ? (
+              <>
+                <NavbarItem className="hidden lg:flex">
+                  <Link href="/sign-in">Login</Link>
+                </NavbarItem>
+                <NavbarItem>
+                  <Button as={Link} color="primary" href="/sign-up" variant="flat" className="font-semibold">
+                    Sign Up
+                  </Button>
+                </NavbarItem>
+              </>
+            ) : (
+              <NavbarItem>
+                <Dropdown placement="bottom-end">
+                  <DropdownTrigger>
+                    <Avatar
+                      as="button"
+                      className="transition-transform cursor-pointer"
+                      color="primary"
+                      name={user.email}
+                      size="sm"
+                      src={user.user_metadata?.avatar_url}
+                    />
+                  </DropdownTrigger>
+                  <DropdownMenu aria-label="Profile Actions" variant="flat">
+                    <DropdownItem key="profile" className="h-14 gap-2">
+                      <p className="font-semibold">Signed in as</p>
+                      <p className="font-semibold">{user.email}</p>
+                    </DropdownItem>
+                    <DropdownItem key="profile_page" href="/profile">
+                      <div className="flex items-center gap-2">
+                        <UserIcon size={16} />
+                        Profile
+                      </div>
+                    </DropdownItem>
+                    <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
+                      <div className="flex items-center gap-2">
+                        <LogOut size={16} />
+                        Sign Out
+                      </div>
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
+              </NavbarItem>
+            )}
+          </>
+        )}
       </NavbarContent>
 
       <NavbarMenu className="pt-6">

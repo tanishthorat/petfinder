@@ -8,13 +8,12 @@ import { Pet } from "@/types";
 import { Button, Card, Image } from "@nextui-org/react";
 import Link from "next/link";
 
-// Fix for default marker icon
-const icon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
+// Fix for default icon issue with webpack
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
 interface MapViewProps {
@@ -39,17 +38,8 @@ export default function MapView({ pets }: MapViewProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {pets.map((pet) => (
-        // Mocking coordinates since they aren't in the type yet
-        // In a real app, we'd geocode the address
-        <Marker 
-          key={pet.id} 
-          position={[
-            40.7128 + (Math.random() - 0.5) * 0.1, 
-            -74.0060 + (Math.random() - 0.5) * 0.1
-          ]} 
-          icon={icon}
-        >
+      {pets.filter(p => p.location_lat && p.location_lng).map((pet) => (
+        <Marker key={pet.id} position={[pet.location_lat, pet.location_lng]}>
           <Popup>
             <Card className="w-48 p-0 shadow-none border-none">
               <Image 

@@ -22,7 +22,7 @@ PetPro is a modern web application designed as a pet adoption and matching platf
 
 ### Backend & Database
 - **Database**: PostgreSQL
-- **ORM**: Prisma (v5.22.0) for type-safe database operations
+- **Backend**: Supabase for database, authentication, and storage
 - **Authentication**: Clerk (v6.35.6) for user authentication and management
 - **API Integration**: Petfinder API for external pet data
 
@@ -54,7 +54,6 @@ petpro/
 ├── components/           # Reusable UI components
 ├── data/                # Mock data and seed files
 ├── lib/                 # Utility functions and configurations
-├── prisma/              # Database schema and migrations
 ├── public/              # Static assets
 └── types/               # TypeScript type definitions
 ```
@@ -62,7 +61,7 @@ petpro/
 ### Database Schema
 The application uses a relational database with the following key entities:
 - **Users**: Authenticated users with Clerk integration
-- **Pets**: Pet records from both user submissions and Petfinder API
+- **Pets**: Pet records from both user submiand Supabase ssions and Petfinder API
 - **Matches**: Bidirectional matching system between users and pets
 - **Messages**: Communication system for matched users
 
@@ -85,7 +84,7 @@ The application uses a relational database with the following key entities:
 
 ### Type Safety
 - Strict TypeScript configuration for compile-time error prevention
-- Prisma for type-safe database operations
+- Supabase for type-safe database operations
 - Comprehensive type definitions for API responses and component props
 
 ### Component Architecture
@@ -116,7 +115,7 @@ The application uses a relational database with the following key entities:
 - Server-side rendering for SEO and performance
 
 ### Database Management
-- Prisma migrations for schema changes
+- Supabase for database management
 - Seeding scripts for development data
 - PostgreSQL for production reliability
 
@@ -153,7 +152,7 @@ The application uses a relational database with the following key entities:
 ### Technical Scalability
 - **Microservices Ready**: Modular architecture allows for service separation
 - **API-First Design**: RESTful APIs for potential mobile app integration
-- **Database Optimization**: Prisma allows for easy database scaling
+- **Database Optimization**: Supabase allows for easy database scaling
 - **CDN Integration**: Next.js compatible with modern CDN solutions
 
 ### Feature Extensibility

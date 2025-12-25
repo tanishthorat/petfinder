@@ -4,10 +4,20 @@ import React from "react";
 import { Card, CardBody, Image, Button, Chip } from "@nextui-org/react";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
-import { Match, Pet } from "@prisma/client"; // Or your types
 
 // Define a type that includes the relation
-type MatchWithPet = Match & { pet: Pet };
+type Pet = {
+  id: string;
+  name: string;
+  breed: string;
+  age: number;
+  images: string[];
+};
+
+type Match = {
+  id: string;
+  pet: Pet;
+};
 
 interface MatchesListProps {
   matches: MatchWithPet[];

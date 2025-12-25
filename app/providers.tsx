@@ -1,14 +1,14 @@
 "use client";
 
 import { NextUIProvider } from "@nextui-org/react";
-import { ClerkProvider } from "@clerk/nextjs";
+import { SupabaseAuthProvider } from "@/lib/supabase/auth-context";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <SupabaseAuthProvider>
       <NextUIProvider>
         {children}
       </NextUIProvider>
-    </ClerkProvider>
+    </SupabaseAuthProvider>
   );
 }
