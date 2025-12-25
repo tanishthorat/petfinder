@@ -55,10 +55,26 @@ function mapPrismaPetToType(p: any): PetType {
 }
 
 import { mockPets } from "@/data/mock-pets";
+import { searchAnimals } from "@/lib/petfinder";
 
 export async function getFeed() {
-  // 1. Fetch from Mock Data (instead of API)
-  let apiPets: any[] = mockPets;
+  // 1. Fetch from Petfinder API with reasonable defaults
+  let apiPets: any[] = [];
+  
+  try {
+    const data = await searchAnimals({
+      limit: 30,
+      sort: 'recent',
+      // Optionally add location-based search
+      // location: '10001',
+      // distance: 100,
+    });
+    apiPets = data.animals || [];
+  } catch (error) {
+    console.log("ℹ️ Using mock data (Petfinder API not configured)");
+    apiPets = mockPets;
+  }
+
   let dbPets: any[] = [];
 
   try {
@@ -69,7 +85,7 @@ export async function getFeed() {
       take: 20,
     });
   } catch (error) {
-    console.warn("Database unreachable, skipping local pets:", error);
+    console.log("ℹ️ Database not configured, skipping local pets");
     // Continue without DB pets
   }
 
@@ -77,9 +93,12 @@ export async function getFeed() {
     // 3. Map DB pets to the same structure
     const mappedDbPets = dbPets.map(mapPrismaPetToType);
 
-    // 4. Merge and Shuffle (simple merge for now)
+    // 4. Merge and Shuffle for variety
     // Put DB pets first to give them visibility
-    return [...mappedDbPets, ...apiPets];
+    const allPets = [...mappedDbPets, ...apiPets];
+    
+    // Shuffle the array for variety
+    return allPets.sort(() => Math.random() - 0.5);
   } catch (error) {
     console.error("Error processing feed:", error);
     // Fallback to just apiPets if mapping fails
@@ -155,7 +174,7 @@ export async function likePet(petData: any) {
     revalidatePath("/matches");
     return { success: true, message: "Matched!" };
   } catch (error) {
-    console.warn("Database error in likePet, falling back to in-memory store:", error);
+    console.log("Database error in likePet, falling back to in-memory store:", error);
     
     // Fallback: Save to in-memory store
     const existingMatch = mockMatchesStore.find((m: any) => m.userId === userId && m.petId === petData.id);
@@ -201,7 +220,7 @@ export async function getMatches() {
 
     return matches;
   } catch (error) {
-    console.warn("Database error in getMatches, falling back to in-memory store:", error);
+    console.log("Database error in getMatches, falling back to in-memory store:", error);
     // Fallback: Filter from in-memory store
     return mockMatchesStore
       .filter((m: any) => m.userId === userId && m.status === "LIKED")

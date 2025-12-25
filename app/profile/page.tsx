@@ -43,8 +43,8 @@ export default function ProfilePage() {
               <Camera size={16} />
             </Button>
           </div>
-          <h2 className="text-2xl font-bold mt-4">Alex Johnson</h2>
-          <p className="text-gray-500">New York, NY</p>
+          <h2 className="text-2xl font-bold mt-4 text-gray-900">Alex Johnson</h2>
+          <p className="text-gray-600">New York, NY</p>
         </div>
 
         {/* Premium Banner */}
@@ -62,13 +62,13 @@ export default function ProfilePage() {
 
         {/* Discovery Settings */}
         <section>
-          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">Discovery Settings</h3>
+          <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3 px-1">Discovery Settings</h3>
           <Card className="shadow-sm">
             <CardBody className="space-y-6 p-4">
               <div>
                 <div className="flex justify-between mb-2">
-                  <span className="font-semibold">Maximum Distance</span>
-                  <span className="text-gray-500">{distance} km</span>
+                  <span className="font-semibold text-gray-900">Maximum Distance</span>
+                  <span className="text-gray-600">{distance} km</span>
                 </div>
                 <Slider 
                   aria-label="Distance"
@@ -85,8 +85,8 @@ export default function ProfilePage() {
 
               <div>
                 <div className="flex justify-between mb-2">
-                  <span className="font-semibold">Age Range</span>
-                  <span className="text-gray-500">{Array.isArray(ageRange) ? `${ageRange[0]} - ${ageRange[1]}` : ageRange} yrs</span>
+                  <span className="font-semibold text-gray-900">Age Range</span>
+                  <span className="text-gray-600">{Array.isArray(ageRange) ? `${ageRange[0]} - ${ageRange[1]}` : ageRange} yrs</span>
                 </div>
                 <Slider 
                   aria-label="Age Range"
@@ -102,7 +102,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <span className="font-semibold block mb-2">Show Me</span>
+                <span className="font-semibold block mb-2 text-gray-900">Show Me</span>
                 <RadioGroup orientation="horizontal" defaultValue="all" size="sm">
                   <Radio value="dogs">Dogs</Radio>
                   <Radio value="cats">Cats</Radio>
@@ -115,7 +115,7 @@ export default function ProfilePage() {
 
         {/* App Settings */}
         <section>
-          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">App Settings</h3>
+          <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3 px-1">App Settings</h3>
           <Card className="shadow-sm">
             <CardBody className="p-0 divide-y">
               <div className="flex justify-between items-center p-4">

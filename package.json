@@ -6,10 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "seed:supabase": "ts-node scripts/seed-supabase.ts",
     "lint": "eslint",
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.34.0",
     "@clerk/nextjs": "^6.35.6",
     "@nextui-org/react": "^2.6.11",
     "@types/leaflet": "^1.9.21",

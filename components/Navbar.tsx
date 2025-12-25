@@ -30,7 +30,7 @@ export const Navbar = () => {
     <NextUINavbar 
       onMenuOpenChange={setIsMenuOpen} 
       maxWidth="xl" 
-      className="bg-white/70 backdrop-blur-md border-b border-white/20 fixed top-0 z-50"
+      className="bg-white shadow-md border-b border-gray-200 fixed top-0 z-50"
     >
       <NavbarContent>
         <NavbarMenuToggle

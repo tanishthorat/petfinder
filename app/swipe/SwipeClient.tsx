@@ -6,7 +6,7 @@ import { Pet } from "@/types";
 import { Button } from "@nextui-org/react";
 import { Heart, X, RotateCcw, MessageCircle, User, MapPin } from "lucide-react";
 import Link from "next/link";
-import { likePet } from "@/app/actions";
+import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 
 interface SwipeClientProps {
@@ -16,6 +16,7 @@ interface SwipeClientProps {
 export default function SwipeClient({ initialPets }: SwipeClientProps) {
   const [pets, setPets] = useState<Pet[]>(initialPets);
   const [lastRemovedPet, setLastRemovedPet] = useState<Pet | null>(null);
+  const { user } = useUser();
 
   const handleSwipe = async (direction: "left" | "right", id: number) => {
     const petToRemove = pets.find((p) => p.id === id);
@@ -25,12 +26,26 @@ export default function SwipeClient({ initialPets }: SwipeClientProps) {
 
       if (direction === "right") {
         try {
-          // Pass the full pet object to likePet so it can be saved if needed
-          const result = await likePet(petToRemove);
-          if (result.success) {
+          // Call the likes API to persist the like (Supabase)
+          const userId = user?.id;
+          // If Clerk user isn't loaded yet, fall back to server action via /app/actions
+          if (!userId) {
+            // best-effort: call server action by posting to `/api/likes` without header
+            await fetch('/api/likes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pet_id: String(petToRemove.id), action: 'like' })
+            });
             toast.success(`You liked ${petToRemove.name}!`);
           } else {
-            console.error(result.message);
+            const res = await fetch('/api/likes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
+              body: JSON.stringify({ pet_id: String(petToRemove.id), action: 'like' })
+            });
+            const json = await res.json();
+            if (res.ok) toast.success(`You liked ${petToRemove.name}!`);
+            else console.error('Error liking pet:', json);
           }
         } catch (error) {
           console.error("Failed to like pet:", error);
@@ -61,11 +76,11 @@ export default function SwipeClient({ initialPets }: SwipeClientProps) {
               />
             ))
           ) : (
-            <div className="text-center p-8 text-gray-500">
+            <div className="text-center p-8">
               <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-6 flex items-center justify-center animate-pulse">
                 <User size={48} className="text-gray-400" />
               </div>
-              <h3 className="text-2xl font-bold mb-2 text-gray-800">No more pets nearby!</h3>
+              <h3 className="text-2xl font-bold mb-2 text-gray-900">No more pets nearby!</h3>
               <p className="text-gray-600 mb-8">Check back later for more furry friends.</p>
               <Button 
                 color="primary" 

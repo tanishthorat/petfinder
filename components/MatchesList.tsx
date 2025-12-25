@@ -17,14 +17,14 @@ export default function MatchesList({ matches }: MatchesListProps) {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2">Your Matches</h1>
-        <p className="text-gray-500 mb-8">Pets you've liked and are waiting to meet you!</p>
+        <h1 className="text-3xl font-bold mb-2 text-gray-900">Your Matches</h1>
+        <p className="text-gray-600 mb-8">Pets you've liked and are waiting to meet you!</p>
 
         {matches.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🐾</div>
-            <h2 className="text-2xl font-bold mb-2">No matches yet</h2>
-            <p className="text-gray-500 mb-6">Start swiping to find your perfect companion.</p>
+            <h2 className="text-2xl font-bold mb-2 text-gray-900">No matches yet</h2>
+            <p className="text-gray-600 mb-6">Start swiping to find your perfect companion.</p>
             <Link href="/swipe">
               <Button color="primary" size="lg">Start Swiping</Button>
             </Link>

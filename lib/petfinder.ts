@@ -76,7 +76,7 @@ export async function getAnimals(params: Record<string, string> = {}) {
   try {
     return await fetchFromPetfinder('/animals', params);
   } catch (error) {
-    console.warn("Falling back to mock data due to API error:", error);
+    console.log("ℹ️ Using mock data (Petfinder API not configured)");
     return { 
       animals: mockPets, 
       pagination: { 
@@ -99,4 +99,101 @@ export async function getBreeds(type: string) {
 
 export async function getTypes() {
   return fetchFromPetfinder('/types');
+}
+
+// Enhanced search with all your app's filters
+export interface SearchParams {
+  type?: string; // 'dog', 'cat', 'rabbit', 'bird', etc.
+  breed?: string[];
+  size?: string[]; // 'small', 'medium', 'large', 'xlarge'
+  gender?: string; // 'male', 'female'
+  age?: string[]; // 'baby', 'young', 'adult', 'senior'
+  color?: string;
+  coat?: string; // 'short', 'medium', 'long'
+  good_with_children?: boolean;
+  good_with_dogs?: boolean;
+  good_with_cats?: boolean;
+  house_trained?: boolean;
+  declawed?: boolean;
+  special_needs?: boolean;
+  location?: string; // ZIP code, city, or state
+  distance?: number; // miles from location
+  page?: number;
+  limit?: number; // max 100
+  sort?: 'recent' | 'distance' | '-recent' | '-distance';
+}
+
+export async function searchAnimals(searchParams: SearchParams = {}) {
+  try {
+    // Convert our SearchParams to Petfinder API format
+    const params: Record<string, string> = {};
+    
+    if (searchParams.type) params.type = searchParams.type;
+    if (searchParams.breed?.length) params.breed = searchParams.breed.join(',');
+    if (searchParams.size?.length) params.size = searchParams.size.join(',');
+    if (searchParams.gender) params.gender = searchParams.gender;
+    if (searchParams.age?.length) params.age = searchParams.age.join(',');
+    if (searchParams.color) params.color = searchParams.color;
+    if (searchParams.coat) params.coat = searchParams.coat;
+    if (searchParams.good_with_children !== undefined) params.good_with_children = String(searchParams.good_with_children);
+    if (searchParams.good_with_dogs !== undefined) params.good_with_dogs = String(searchParams.good_with_dogs);
+    if (searchParams.good_with_cats !== undefined) params.good_with_cats = String(searchParams.good_with_cats);
+    if (searchParams.house_trained !== undefined) params.house_trained = String(searchParams.house_trained);
+    if (searchParams.declawed !== undefined) params.declawed = String(searchParams.declawed);
+    if (searchParams.special_needs !== undefined) params.special_needs = String(searchParams.special_needs);
+    if (searchParams.location) params.location = searchParams.location;
+    if (searchParams.distance) params.distance = String(searchParams.distance);
+    if (searchParams.page) params.page = String(searchParams.page);
+    if (searchParams.limit) params.limit = String(searchParams.limit);
+    if (searchParams.sort) params.sort = searchParams.sort;
+    
+    return await fetchFromPetfinder('/animals', params);
+  } catch (error) {
+    console.log("ℹ️ Using mock data (Petfinder API not configured)");
+    // Filter mock data based on search params
+    let filteredPets = [...mockPets];
+    
+    if (searchParams.type) {
+      filteredPets = filteredPets.filter(p => p.type.toLowerCase() === searchParams.type?.toLowerCase());
+    }
+    if (searchParams.gender) {
+      filteredPets = filteredPets.filter(p => p.gender.toLowerCase() === searchParams.gender?.toLowerCase());
+    }
+    if (searchParams.age?.length) {
+      filteredPets = filteredPets.filter(p => searchParams.age?.includes(p.age.toLowerCase()));
+    }
+    if (searchParams.size?.length) {
+      filteredPets = filteredPets.filter(p => searchParams.size?.includes(p.size.toLowerCase()));
+    }
+    
+    return {
+      animals: filteredPets,
+      pagination: {
+        count: filteredPets.length,
+        total_count: filteredPets.length,
+        current_page: searchParams.page || 1,
+        total_pages: 1
+      }
+    };
+  }
+}
+
+// Get organizations (shelters)
+export async function getOrganizations(params: Record<string, string> = {}) {
+  try {
+    return await fetchFromPetfinder('/organizations', params);
+  } catch (error) {
+    console.error("Error fetching organizations:", error);
+    throw error;
+  }
+}
+
+// Get organization by ID
+export async function getOrganization(id: string) {
+  try {
+    return await fetchFromPetfinder(`/organizations/${id}`);
+  } catch (error) {
+    console.error("Error fetching organization:", error);
+    throw error;
+  }
 }
