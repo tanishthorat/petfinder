@@ -3,14 +3,14 @@
 import React from "react";
 import { Card, CardBody, Avatar, Button } from "@nextui-org/react";
 import Link from "next/link";
+import { Match } from "@/types";
 
 interface MatchesClientProps {
-  initialPets: Pet[];
+  initialMatches: Match[];
 }
 
-export default function MatchesClient({ initialPets }: MatchesClientProps) {
-  // In a real app, these would be filtered by "liked" status from DB
-  const matches = initialPets.slice(0, 5);
+export default function MatchesClient({ initialMatches = [] }: MatchesClientProps) {
+  const matches = initialMatches;
 
   if (matches.length === 0) {
     return (

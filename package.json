@@ -6,9 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "seed:supabase": "ts-node scripts/seed-supabase.ts",
-    "test:db": "tsx scripts/test-db-simple.ts",
-    "lint": "eslint"
+    "lint": "next lint",
+    "db:seed": "tsx scripts/seed-pets.ts"
   },
   "dependencies": {
     "@nextui-org/react": "^2.6.11",

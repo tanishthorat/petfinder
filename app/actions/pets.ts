@@ -82,12 +82,18 @@ export async function getPetsForSwiping() {
   const user = await getCurrentUser();
   const supabase = await createSupabaseServerClient();
 
+  console.log("DEBUG: Current user ID:", user.id);
+
   // Get user preferences
-  const { data: prefs } = await supabase
+  const { data: prefs, error: prefsError } = await supabase
     .from("user_preferences")
     .select("*")
     .eq("user_id", user.id)
     .single();
+
+  if (prefsError && prefsError.code !== 'PGRST116') { // PGRST116 is 'no rows found'
+    console.warn("Warning: No preferences found or error fetching preferences for user", user.id, prefsError);
+  }
 
   // Get pets the user has already swiped on
   const { data: swipedPetIds, error: swipedError } = await supabase
@@ -101,6 +107,7 @@ export async function getPetsForSwiping() {
   }
   
   const swipedIds = swipedPetIds?.map(s => s.pet_id) || [];
+  console.log("DEBUG: Swiped pet IDs:", swipedIds);
 
   let query = supabase
     .from("pets")
@@ -113,11 +120,17 @@ export async function getPetsForSwiping() {
     query = query.not("id", "in", `(${swipedIds.join(',')})`);
   }
 
+  // Apply preferences as filters
   if (prefs) {
-    if (prefs.species?.length) query = query.in("species", prefs.species);
-    if (prefs.age_min) query = query.gte("age", prefs.age_min * 12);
-    if (prefs.age_max) query = query.lte("age", prefs.age_max * 12);
-    if (prefs.size?.length) query = query.in("size", prefs.size);
+    console.log("DEBUG: Applying preferences:", prefs);
+    if (prefs.species?.length) {
+      query = query.in("species", prefs.species as string[]); // Cast to string[]
+    }
+    if (prefs.age_min) query = query.gte("age", prefs.age_min);
+    if (prefs.age_max) query = query.lte("age", prefs.age_max);
+    if (prefs.size?.length) {
+      query = query.in("size", prefs.size as string[]); // Cast to string[]
+    }
   }
 
   const { data: pets, error: petsError } = await query.limit(20);
@@ -127,7 +140,8 @@ export async function getPetsForSwiping() {
     throw new Error("Failed to fetch pets");
   }
 
-  return pets;
+  console.log("DEBUG: Fetched pets count:", pets?.length);
+  return pets || [];
 }
 
 export async function recordSwipe(petId: string, direction: "left" | "right") {

@@ -14,7 +14,7 @@ interface SwipeClientProps {
   initialPets: Pet[];
 }
 
-export default function SwipeClient({ initialPets }: SwipeClientProps) {
+export default function SwipeClient({ initialPets = [] }: SwipeClientProps) {
   const [pets, setPets] = useState<Pet[]>(initialPets);
   const [lastRemovedPet, setLastRemovedPet] = useState<Pet | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);

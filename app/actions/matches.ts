@@ -20,5 +20,5 @@ export async function getMatches() {
     throw new Error("Failed to fetch matches");
   }
   
-  return matches;
+  return matches || [];
 }

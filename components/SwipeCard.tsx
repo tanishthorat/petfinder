@@ -37,7 +37,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ pet, onSwipe, active }) =>
   if (!active) return null;
 
   // Get the best available image
-  const imageUrl = pet.primary_photo_cropped?.full || pet.photos[0]?.full || "https://via.placeholder.com/400x600?text=No+Image";
+  const imageUrl = pet.primary_photo_cropped?.full || (pet.photos ?? [])[0]?.full || "https://via.placeholder.com/400x600?text=No+Image";
   const location = pet.contact?.address?.city && pet.contact?.address?.state 
     ? `${pet.contact.address.city}, ${pet.contact.address.state}`
     : "Location Unknown";
@@ -91,7 +91,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ pet, onSwipe, active }) =>
               <h2 className="text-4xl font-bold flex items-baseline gap-3 mb-1">
                 {pet.name} <span className="text-2xl font-normal opacity-90">{pet.age}</span>
               </h2>
-              <p className="text-xl font-medium opacity-90 text-purple-200">{pet.breeds.primary}</p>
+              <p className="text-xl font-medium opacity-90 text-purple-200">{pet.breeds?.primary || 'Unknown Breed'}</p>
             </div>
             <Link href={`/pet/${pet.id}`}>
               <Button isIconOnly variant="flat" className="bg-white/20 backdrop-blur-md text-white hover:bg-white/30" radius="full" size="lg">
@@ -112,9 +112,42 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ pet, onSwipe, active }) =>
             <div className="px-4 py-1.5 bg-white/10 border border-white/20 rounded-full text-sm font-medium backdrop-blur-md">
               {pet.size}
             </div>
-            {pet.attributes.spayed_neutered && (
+            {pet.attributes?.spayed_neutered && (
               <div className="px-4 py-1.5 bg-green-500/20 border border-green-500/30 text-green-200 rounded-full text-sm font-medium backdrop-blur-md">
                 Fixed
+              </div>
+            )}
+            {pet.attributes?.house_trained && (
+              <div className="px-4 py-1.5 bg-blue-500/20 border border-blue-500/30 text-blue-200 rounded-full text-sm font-medium backdrop-blur-md">
+                House Trained
+              </div>
+            )}
+            {pet.attributes?.shots_current && (
+              <div className="px-4 py-1.5 bg-purple-500/20 border border-purple-500/30 text-purple-200 rounded-full text-sm font-medium backdrop-blur-md">
+                Shots Current
+              </div>
+            )}
+            {pet.attributes?.special_needs && (
+              <div className="px-4 py-1.5 bg-yellow-500/20 border border-yellow-500/30 text-yellow-200 rounded-full text-sm font-medium backdrop-blur-md">
+                Special Needs
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 mt-4">
+            {pet.environment?.children && (
+              <div className="px-4 py-1.5 bg-white/10 border border-white/20 rounded-full text-sm font-medium backdrop-blur-md">
+                Good with Kids
+              </div>
+            )}
+            {pet.environment?.dogs && (
+              <div className="px-4 py-1.5 bg-white/10 border border-white/20 rounded-full text-sm font-medium backdrop-blur-md">
+                Good with Dogs
+              </div>
+            )}
+            {pet.environment?.cats && (
+              <div className="px-4 py-1.5 bg-white/10 border border-white/20 rounded-full text-sm font-medium backdrop-blur-md">
+                Good with Cats
               </div>
             )}
           </div>
