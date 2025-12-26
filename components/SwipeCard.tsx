@@ -36,11 +36,28 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ pet, onSwipe, active }) =>
 
   if (!active) return null;
 
-  // Get the best available image
-  const imageUrl = pet.primary_photo_cropped?.full || (pet.photos ?? [])[0]?.full || "https://via.placeholder.com/400x600?text=No+Image";
+  // Get the best available image - handle both Supabase (images array) and Petfinder (photos array) formats
+  const getImageUrl = () => {
+    // Check for Supabase images array
+    if ((pet as any).images && Array.isArray((pet as any).images) && (pet as any).images.length > 0) {
+      return (pet as any).images[0];
+    }
+    // Check for Petfinder photos array
+    if (pet.photos && pet.photos.length > 0) {
+      return pet.photos[0].full;
+    }
+    // Check for primary_photo_cropped
+    if (pet.primary_photo_cropped?.full) {
+      return pet.primary_photo_cropped.full;
+    }
+    // Fallback placeholder
+    return "https://via.placeholder.com/400x600?text=No+Image";
+  };
+
+  const imageUrl = getImageUrl();
   const location = pet.contact?.address?.city && pet.contact?.address?.state 
     ? `${pet.contact.address.city}, ${pet.contact.address.state}`
-    : "Location Unknown";
+    : (pet as any).location || "Location Unknown";
 
   return (
     <motion.div

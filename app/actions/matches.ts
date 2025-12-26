@@ -22,3 +22,55 @@ export async function getMatches() {
   
   return matches || [];
 }
+
+export async function createMatchFromLike(petId: string, adopterId: string) {
+  const authUser = await getUser();
+  if (!authUser) throw new Error("Unauthorized");
+
+  const supabase = await createSupabaseServerClient();
+
+  // Get pet owner
+  const { data: pet } = await supabase
+    .from("pets")
+    .select("owner_id")
+    .eq("id", petId)
+    .single();
+
+  if (!pet || pet.owner_id !== authUser.id) {
+    throw new Error("You can only create matches for your own pets");
+  }
+
+  // Check if match already exists
+  const { data: existingMatch } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("pet_id", petId)
+    .eq("adopter_id", adopterId)
+    .eq("owner_id", authUser.id)
+    .single();
+
+  if (existingMatch) {
+    return existingMatch;
+  }
+
+  // Create new match
+  const { data: match, error } = await supabase
+    .from("matches")
+    .insert([
+      {
+        pet_id: petId,
+        adopter_id: adopterId,
+        owner_id: authUser.id,
+        status: "matched",
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating match:", error);
+    throw new Error("Failed to create match");
+  }
+
+  return match;
+}

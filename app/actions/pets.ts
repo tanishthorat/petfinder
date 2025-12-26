@@ -58,23 +58,147 @@ export async function createPet(pet: {
   good_with_kids: boolean;
   good_with_pets: boolean;
   images: string[];
+  // Optional fields
+  color?: string;
+  coat?: string;
+  city?: string;
+  state?: string;
+  special_needs?: string;
+  medical_conditions?: string;
+  good_with_cats?: boolean;
+  good_with_dogs?: boolean;
+  energy_level?: string;
+  temperament?: string[];
+  training_level?: string;
 }) {
   const user = await getCurrentUser();
   const supabase = await createSupabaseServerClient();
 
-  const { data, error } = await supabase.from("pets").insert([
-    {
-      owner_id: user.id,
-      ...pet,
-    },
-  ]);
-
-  if (error) {
-    console.error("Error creating pet:", error);
-    throw new Error("Failed to create pet");
+  if (!user || !user.id) {
+    throw new Error("User not authenticated. Please sign in.");
   }
 
-  revalidatePath("/my-pets");
+  // Build location address string (matches database schema)
+  const location_address = pet.city && pet.state 
+    ? `${pet.city}, ${pet.state}` 
+    : null;
+
+  // Normalize enum values to lowercase and ensure valid values
+  const normalizedSpecies = pet.species?.toLowerCase();
+  
+  // Gender enum only allows 'male' or 'female'
+  let normalizedGender = pet.gender?.toLowerCase();
+  if (normalizedGender && !['male', 'female'].includes(normalizedGender)) {
+    // Default to 'male' if invalid value provided
+    console.warn(`Invalid gender value: ${normalizedGender}, defaulting to 'male'`);
+    normalizedGender = 'male';
+  }
+  
+  // Size enum: 'small', 'medium', 'large', 'extra_large'
+  let normalizedSize = pet.size?.toLowerCase()?.replace(/\s+/g, '_');
+  if (normalizedSize === 'extra-large' || normalizedSize === 'extra_large') {
+    normalizedSize = 'extra_large';
+  }
+  if (normalizedSize && !['small', 'medium', 'large', 'extra_large'].includes(normalizedSize)) {
+    // Default to 'medium' if invalid
+    console.warn(`Invalid size value: ${normalizedSize}, defaulting to 'medium'`);
+    normalizedSize = 'medium';
+  }
+  
+  // Energy level enum: 'low', 'medium', 'high'
+  let normalizedEnergyLevel = pet.energy_level?.toLowerCase() || null;
+  if (normalizedEnergyLevel && !['low', 'medium', 'high'].includes(normalizedEnergyLevel)) {
+    normalizedEnergyLevel = 'medium';
+  }
+
+  // Species enum: 'dog', 'cat', 'bird', 'rabbit', 'other'
+  if (normalizedSpecies && !['dog', 'cat', 'bird', 'rabbit', 'other'].includes(normalizedSpecies)) {
+    throw new Error(`Invalid species: ${normalizedSpecies}. Must be one of: dog, cat, bird, rabbit, other`);
+  }
+
+  // Validate required fields
+  if (!pet.name || !normalizedSpecies || !pet.breed || pet.age === undefined || pet.age < 0 || !normalizedGender || !normalizedSize) {
+    throw new Error("Missing required fields: name, species, breed, age (>= 0), gender, and size are required");
+  }
+
+  // Ensure images array is valid
+  const imagesArray = Array.isArray(pet.images) && pet.images.length > 0 
+    ? pet.images.filter(img => img && typeof img === 'string' && img.trim().length > 0)
+    : null;
+
+  if (!imagesArray || imagesArray.length === 0) {
+    throw new Error("At least one image is required");
+  }
+
+  // Normalize enum values to lowercase
+  const normalizedPet: Record<string, any> = {
+    owner_id: user.id,
+    name: pet.name.trim(),
+    species: normalizedSpecies,
+    breed: pet.breed.trim(),
+    age: Math.max(0, Math.floor(pet.age)), // Ensure non-negative integer
+    gender: normalizedGender,
+    size: normalizedSize,
+    description: pet.description?.trim() || null,
+    health_status: pet.health_status?.trim() || null,
+    vaccination_status: pet.vaccination_status === true || pet.vaccination_status === false ? pet.vaccination_status : null,
+    is_neutered: pet.is_neutered === true || pet.is_neutered === false ? pet.is_neutered : null,
+    good_with_kids: pet.good_with_kids === true || pet.good_with_kids === false ? pet.good_with_kids : null,
+    good_with_pets: pet.good_with_pets === true || pet.good_with_pets === false ? pet.good_with_pets : null,
+    images: imagesArray,
+    color: pet.color?.trim() || null,
+    location_address: location_address,
+    special_needs: pet.special_needs?.trim() || null,
+    energy_level: normalizedEnergyLevel,
+    temperament: Array.isArray(pet.temperament) && pet.temperament.length > 0 ? pet.temperament : null,
+    status: 'available',
+  };
+
+  // Only add optional fields if they have values
+  if (pet.medical_conditions) {
+    normalizedPet.special_needs = (normalizedPet.special_needs || '') + (normalizedPet.special_needs ? '\n' : '') + pet.medical_conditions;
+  }
+
+  // Log what we're trying to insert for debugging
+  console.log("📝 Attempting to create pet with data:", {
+    name: normalizedPet.name,
+    species: normalizedPet.species,
+    breed: normalizedPet.breed,
+    age: normalizedPet.age,
+    gender: normalizedPet.gender,
+    size: normalizedPet.size,
+    owner_id: normalizedPet.owner_id,
+    images_count: normalizedPet.images?.length || 0,
+  });
+
+  const { data, error } = await supabase.from("pets").insert([normalizedPet]).select().single();
+
+  if (error) {
+    console.error("❌ Database error creating pet:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      fullError: error,
+    });
+    
+    // Provide more specific error messages
+    if (error.code === '23505') {
+      throw new Error("A pet with this information already exists");
+    } else if (error.code === '23503') {
+      throw new Error("Invalid owner ID. Please sign in again.");
+    } else if (error.code === '23502') {
+      throw new Error(`Missing required field: ${error.message}`);
+    } else if (error.message?.includes('violates check constraint')) {
+      throw new Error(`Invalid data: ${error.message}. Please check species, gender, or size values.`);
+    } else {
+      throw new Error(`Failed to create pet: ${error.message || 'Unknown database error'}`);
+    }
+  }
+
+  console.log("✅ Pet created successfully:", data);
+  revalidatePath("/profile");
+  revalidatePath("/swipe");
   return data;
 }
 
@@ -83,6 +207,20 @@ export async function getPetsForSwiping() {
   const supabase = await createSupabaseServerClient();
 
   console.log("DEBUG: Current user ID:", user.id);
+
+  // Check total available pets in database
+  const { count: totalAvailable } = await supabase
+    .from("pets")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "available");
+  console.log("DEBUG: Total available pets in database:", totalAvailable);
+
+  // Check how many pets are owned by current user
+  const { count: ownedByUser } = await supabase
+    .from("pets")
+    .select("*", { count: "exact", head: true })
+    .eq("owner_id", user.id);
+  console.log("DEBUG: Pets owned by current user:", ownedByUser);
 
   // Get user preferences
   const { data: prefs, error: prefsError } = await supabase
@@ -94,6 +232,8 @@ export async function getPetsForSwiping() {
   if (prefsError && prefsError.code !== 'PGRST116') { // PGRST116 is 'no rows found'
     console.warn("Warning: No preferences found or error fetching preferences for user", user.id, prefsError);
   }
+
+  console.log("DEBUG: User preferences:", prefs);
 
   // Get pets the user has already swiped on
   const { data: swipedPetIds, error: swipedError } = await supabase
@@ -107,7 +247,7 @@ export async function getPetsForSwiping() {
   }
   
   const swipedIds = swipedPetIds?.map(s => s.pet_id) || [];
-  console.log("DEBUG: Swiped pet IDs:", swipedIds);
+  console.log("DEBUG: Swiped pet IDs count:", swipedIds.length);
 
   let query = supabase
     .from("pets")
@@ -120,16 +260,27 @@ export async function getPetsForSwiping() {
     query = query.not("id", "in", `(${swipedIds.join(',')})`);
   }
 
-  // Apply preferences as filters
+  // Apply preferences as filters - BUT ONLY IF THEY EXIST AND ARE NOT EMPTY
   if (prefs) {
-    console.log("DEBUG: Applying preferences:", prefs);
     if (prefs.species?.length) {
-      query = query.in("species", prefs.species as string[]); // Cast to string[]
+      console.log("DEBUG: Filtering by species:", prefs.species);
+      // Convert species to lowercase to match enum values
+      const speciesLowercase = (prefs.species as string[]).map(s => s.toLowerCase());
+      query = query.in("species", speciesLowercase);
     }
-    if (prefs.age_min) query = query.gte("age", prefs.age_min);
-    if (prefs.age_max) query = query.lte("age", prefs.age_max);
+    if (prefs.age_min !== null && prefs.age_min !== undefined) {
+      console.log("DEBUG: Filtering by age_min:", prefs.age_min);
+      query = query.gte("age", prefs.age_min);
+    }
+    if (prefs.age_max !== null && prefs.age_max !== undefined) {
+      console.log("DEBUG: Filtering by age_max:", prefs.age_max);
+      query = query.lte("age", prefs.age_max);
+    }
     if (prefs.size?.length) {
-      query = query.in("size", prefs.size as string[]); // Cast to string[]
+      console.log("DEBUG: Filtering by size:", prefs.size);
+      // Convert size to lowercase to match enum values
+      const sizeLowercase = (prefs.size as string[]).map(s => s.toLowerCase());
+      query = query.in("size", sizeLowercase);
     }
   }
 
@@ -140,7 +291,10 @@ export async function getPetsForSwiping() {
     throw new Error("Failed to fetch pets");
   }
 
-  console.log("DEBUG: Fetched pets count:", pets?.length);
+  console.log("DEBUG: Final fetched pets count:", pets?.length);
+  if (pets) {
+    console.log("DEBUG: Pet IDs returned:", pets.map(p => p.id));
+  }
   return pets || [];
 }
 
@@ -243,4 +397,133 @@ export async function searchPets(filters: { [key: string]: any }) {
   }
 
   return data;
+}
+
+// Admin function to get all pets (for debugging)
+export async function getAllPets() {
+  const supabase = await createSupabaseServerClient();
+  const { data: pets, error } = await supabase
+    .from("pets")
+    .select("id, name, species, breed, size, status, owner_id, age")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching all pets:", error);
+    throw new Error("Failed to fetch all pets");
+  }
+
+  console.log("DEBUG: All pets in database:", pets);
+  return pets || [];
+}
+
+export async function getMyPets() {
+  const user = await getCurrentUser();
+  const supabase = await createSupabaseServerClient();
+
+  // Get all pets owned by the user
+  const { data: pets, error } = await supabase
+    .from("pets")
+    .select("*")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching my pets:", error);
+    throw new Error("Failed to fetch your pets");
+  }
+
+  if (!pets || pets.length === 0) {
+    return [];
+  }
+
+  // For each pet, get like count and users who liked it
+  const petsWithLikes = await Promise.all(
+    pets.map(async (pet) => {
+      // Get all right swipes (likes) for this pet
+      const { data: likes, error: likesError } = await supabase
+        .from("swipes")
+        .select("*")
+        .eq("pet_id", pet.id)
+        .eq("direction", "right");
+
+      if (likesError) {
+        console.error(`Error fetching likes for pet ${pet.id}:`, likesError);
+      }
+
+      // Get user details for each like
+      const likesWithUsers = await Promise.all(
+        (likes || []).map(async (like) => {
+          const { data: userData } = await supabase
+            .from("users")
+            .select("id, full_name, email, profile_image_url")
+            .eq("id", like.user_id)
+            .single();
+          
+          return {
+            id: like.id,
+            user_id: like.user_id,
+            swiped_at: like.swiped_at,
+            user: userData || null
+          };
+        })
+      );
+
+      // Get matches for this pet (users who liked and we matched with)
+      const { data: matches, error: matchesError } = await supabase
+        .from("matches")
+        .select("*")
+        .eq("pet_id", pet.id)
+        .eq("owner_id", user.id);
+
+      if (matchesError) {
+        console.error(`Error fetching matches for pet ${pet.id}:`, matchesError);
+      }
+
+      // Get adopter details for each match
+      const matchesWithAdopters = await Promise.all(
+        (matches || []).map(async (match) => {
+          const { data: adopterData } = await supabase
+            .from("users")
+            .select("id, full_name, email, profile_image_url")
+            .eq("id", match.adopter_id)
+            .single();
+          
+          return {
+            id: match.id,
+            adopter_id: match.adopter_id,
+            status: match.status,
+            matched_at: match.matched_at,
+            adopter: adopterData || null
+          };
+        })
+      );
+
+      // Get users who liked but haven't matched yet (potential contacts)
+      const likedUserIds = likesWithUsers.map(l => l.user_id);
+      const matchedUserIds = matchesWithAdopters.map(m => m.adopter_id);
+      const potentialContacts = likedUserIds.filter(id => !matchedUserIds.includes(id));
+
+      // Get user details for potential contacts
+      const potentialContactUsers = await Promise.all(
+        potentialContacts.map(async (userId) => {
+          const { data: userData } = await supabase
+            .from("users")
+            .select("id, full_name, email, profile_image_url")
+            .eq("id", userId)
+            .single();
+          return userData;
+        })
+      );
+
+      return {
+        ...pet,
+        likeCount: likesWithUsers.length,
+        likes: likesWithUsers,
+        matches: matchesWithAdopters,
+        potentialContacts: potentialContactUsers.filter(u => u !== null)
+      };
+    })
+  );
+
+  return petsWithLikes;
 }

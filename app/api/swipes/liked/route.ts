@@ -1,5 +1,4 @@
 import { createClient } from "@/utils/supabase/server";
-import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getLikedPets } from "@/app/actions/pets";
 

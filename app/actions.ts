@@ -1,7 +1,7 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabaseClient";
+import { getUser } from "@/lib/supabase/server-client";
+import { createSupabaseServerClient } from "@/lib/supabase/server-client";
 import { revalidatePath } from "next/cache";
 import { getAnimals } from "@/lib/petfinder";
 import { Pet as PetType } from "@/types";
@@ -12,8 +12,10 @@ if (!globalForMatches.mockMatchesStore) globalForMatches.mockMatchesStore = [];
 const mockMatchesStore = globalForMatches.mockMatchesStore;
 
 export async function likePet(petData: any) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
+  const user = await getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const supabase = await createSupabaseServerClient();
 
   try {
     // 1. Ensure Pet exists in DB
@@ -55,7 +57,7 @@ export async function likePet(petData: any) {
     const { data: existingMatch } = await supabase
       .from('matches')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .eq('pet_id', dbPet.id)
       .single();
 
@@ -65,7 +67,7 @@ export async function likePet(petData: any) {
 
     await supabase.from('matches').insert([
       {
-        user_id: userId,
+        user_id: user.id,
         pet_id: dbPet.id,
         status: "LIKED",
       },
@@ -77,14 +79,14 @@ export async function likePet(petData: any) {
     console.log("Database error in likePet, falling back to in-memory store:", error);
     
     // Fallback: Save to in-memory store
-    const existingMatch = mockMatchesStore.find((m: any) => m.userId === userId && m.petId === petData.id);
+    const existingMatch = mockMatchesStore.find((m: any) => m.userId === user.id && m.petId === petData.id);
     if (existingMatch) {
       return { success: true, message: "Already matched (Fallback)" };
     }
 
     mockMatchesStore.push({
       id: `mock-match-${Date.now()}`,
-      userId,
+      userId: user.id,
       petId: petData.id,
       status: "LIKED",
       createdAt: new Date(),
@@ -101,14 +103,16 @@ export async function likePet(petData: any) {
 }
 
 export async function getMatches() {
-  const { userId } = await auth();
-  if (!userId) return [];
+  const user = await getUser();
+  if (!user) return [];
+
+  const supabase = await createSupabaseServerClient();
 
   try {
     const { data: matches, error } = await supabase
       .from('matches')
       .select('*, pets(*)')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .eq('status', 'LIKED')
       .order('created_at', { ascending: false });
 
@@ -119,14 +123,16 @@ export async function getMatches() {
     console.log("Database error in getMatches, falling back to in-memory store:", error);
     // Fallback: Filter from in-memory store
     return mockMatchesStore
-      .filter((m: any) => m.userId === userId && m.status === "LIKED")
+      .filter((m: any) => m.userId === user.id && m.status === "LIKED")
       .sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 }
 
 export async function createPet(formData: FormData) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
+  const authUser = await getUser();
+  if (!authUser) throw new Error("Unauthorized");
+
+  const supabase = await createSupabaseServerClient();
 
   try {
     const name = formData.get("name") as string;
@@ -139,18 +145,6 @@ export async function createPet(formData: FormData) {
     // For this demo, we'll use a placeholder or expect a URL input.
     const imageUrl = formData.get("imageUrl") as string || "https://via.placeholder.com/600x600";
 
-    // Find or create user to link
-    let { data: user } = await supabase
-      .from('users')
-      .select('id')
-      .eq('clerk_user_id', userId)
-      .single();
-
-    if (!user) {
-      // Should create user if not exists (webhook usually handles this, but safe fallback)
-      // Skipping for brevity, assuming user exists
-    }
-
     await supabase.from('pets').insert([
       {
         name,
@@ -160,10 +154,11 @@ export async function createPet(formData: FormData) {
         location: `${city}, ${state}`,
         images: [imageUrl],
         source: "USER",
-        owner_id: user?.id, // Link to internal user ID
-        species: "Dog", // Default or add field
-        gender: "Unknown", // Default or add field
-        size: "Medium", // Default or add field
+        owner_id: authUser.id,
+        species: "dog", // Default - lowercase to match enum
+        gender: "male", // Default - lowercase to match enum
+        size: "medium", // Default - lowercase to match enum
+        status: "available",
       },
     ]);
 

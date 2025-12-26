@@ -17,7 +17,7 @@ import {
   DropdownItem,
   Avatar,
 } from "@nextui-org/react";
-import { Heart, LogOut, User as UserIcon } from "lucide-react";
+import { Heart, LogOut, User as UserIcon, Plus, PawPrint, List } from "lucide-react";
 import { useUser } from "@/lib/supabase/auth-context";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
@@ -32,6 +32,7 @@ export const Navbar = () => {
     { name: "Home", href: "/" },
     { name: "Find a Pet", href: "/swipe" },
     { name: "Matches", href: "/matches" },
+    { name: "My Pets", href: "/my-pets" },
     { name: "Map", href: "/map" },
     { name: "Community", href: "/community" },
   ];
@@ -90,38 +91,67 @@ export const Navbar = () => {
                 </NavbarItem>
               </>
             ) : (
-              <NavbarItem>
-                <Dropdown placement="bottom-end">
-                  <DropdownTrigger>
-                    <Avatar
-                      as="button"
-                      className="transition-transform cursor-pointer"
-                      color="primary"
-                      name={user.email}
-                      size="sm"
-                      src={user.user_metadata?.avatar_url}
-                    />
-                  </DropdownTrigger>
-                  <DropdownMenu aria-label="Profile Actions" variant="flat">
-                    <DropdownItem key="profile" className="h-14 gap-2">
-                      <p className="font-semibold">Signed in as</p>
-                      <p className="font-semibold">{user.email}</p>
-                    </DropdownItem>
-                    <DropdownItem key="profile_page" href="/profile">
-                      <div className="flex items-center gap-2">
-                        <UserIcon size={16} />
-                        Profile
-                      </div>
-                    </DropdownItem>
-                    <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
-                      <div className="flex items-center gap-2">
-                        <LogOut size={16} />
-                        Sign Out
-                      </div>
-                    </DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
-              </NavbarItem>
+              <>
+                {/* List Pet Button */}
+                <NavbarItem className="hidden md:flex">
+                  <Button
+                    as={Link}
+                    href="/pet/create"
+                    color="secondary"
+                    variant="flat"
+                    startContent={<Plus size={18} />}
+                    className="font-semibold bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200"
+                  >
+                    List a Pet
+                  </Button>
+                </NavbarItem>
+
+                {/* User Avatar Dropdown */}
+                <NavbarItem>
+                  <Dropdown placement="bottom-end">
+                    <DropdownTrigger>
+                      <Avatar
+                        as="button"
+                        className="transition-transform cursor-pointer"
+                        color="primary"
+                        name={user.email}
+                        size="sm"
+                        src={user.user_metadata?.avatar_url}
+                      />
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="Profile Actions" variant="flat">
+                      <DropdownItem key="profile" className="h-14 gap-2">
+                        <p className="font-semibold">Signed in as</p>
+                        <p className="font-semibold">{user.email}</p>
+                      </DropdownItem>
+                      <DropdownItem key="profile_page" href="/profile">
+                        <div className="flex items-center gap-2">
+                          <UserIcon size={16} />
+                          Profile
+                        </div>
+                      </DropdownItem>
+                      <DropdownItem key="my_pets" href="/my-pets">
+                        <div className="flex items-center gap-2">
+                          <List size={16} />
+                          My Listed Pets
+                        </div>
+                      </DropdownItem>
+                      <DropdownItem key="list_pet" href="/pet/create" className="md:hidden">
+                        <div className="flex items-center gap-2">
+                          <PawPrint size={16} />
+                          List a Pet
+                        </div>
+                      </DropdownItem>
+                      <DropdownItem key="logout" color="danger" onClick={handleSignOut}>
+                        <div className="flex items-center gap-2">
+                          <LogOut size={16} />
+                          Sign Out
+                        </div>
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                </NavbarItem>
+              </>
             )}
           </>
         )}

@@ -15,6 +15,10 @@ export default function PetDetails({ pet }: PetDetailsProps) {
     ? pet.photos.map(p => p.full) 
     : [pet.primary_photo_cropped?.full || "https://via.placeholder.com/600x600"];
 
+  // Handle both Petfinder API format (with attributes object) and Supabase format (direct fields)
+  const isSpayedNeutered = (pet as any).attributes?.spayed_neutered || (pet as any).is_neutered || false;
+  const isHouseTrained = (pet as any).attributes?.house_trained || (pet as any).good_with_kids || false;
+
   return (
     <div className="min-h-screen bg-white pb-20">
       {/* Mobile Header */}
@@ -75,10 +79,10 @@ export default function PetDetails({ pet }: PetDetailsProps) {
               <div className="flex flex-wrap gap-3 mb-8">
                 <Chip variant="flat" size="lg" className="bg-purple-50 text-purple-700">{pet.gender}</Chip>
                 <Chip variant="flat" size="lg" className="bg-blue-50 text-blue-700">{pet.size}</Chip>
-                {pet.attributes.spayed_neutered && (
+                {isSpayedNeutered && (
                   <Chip variant="flat" size="lg" className="bg-green-50 text-green-700">Spayed/Neutered</Chip>
                 )}
-                {pet.attributes.house_trained && (
+                {isHouseTrained && (
                   <Chip variant="flat" size="lg" className="bg-orange-50 text-orange-700">House Trained</Chip>
                 )}
               </div>
@@ -108,13 +112,13 @@ export default function PetDetails({ pet }: PetDetailsProps) {
               </div>
               
               <div className="space-y-3 mb-6">
-                {pet.contact.email && (
+                {pet.contact?.email && (
                   <div className="flex items-center gap-3 text-gray-600">
                     <Mail size={18} />
                     <span>{pet.contact.email}</span>
                   </div>
                 )}
-                {pet.contact.phone && (
+                {pet.contact?.phone && (
                   <div className="flex items-center gap-3 text-gray-600">
                     <Phone size={18} />
                     <span>{pet.contact.phone}</span>

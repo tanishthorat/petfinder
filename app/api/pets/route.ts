@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { getUser } from "@/lib/supabase/server-client";
+import { NextResponse, NextRequest } from "next/server";
 import { getPetsForSwiping } from "@/app/actions/pets";
 import { searchAnimals, SearchParams } from '@/lib/petfinder';
 import { getPetsFromSupabase } from '@/lib/supabase';
@@ -17,19 +17,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { userId } = await auth();
-  if (!userId) return new NextResponse("Unauthorized", { status: 401 });
+  const user = await getUser();
+  if (!user) return new NextResponse("Unauthorized", { status: 401 });
 
   const body = await request.json();
   const supabase = await createClient();
-  const { data: user, error: userError } = await supabase
-    .from("users")
-    .select("id")
-    .eq("clerk_user_id", userId)
-    .single();
-
-  if (userError || !user) return new NextResponse("User not found", { status: 404 });
-
   const { data, error } = await supabase
     .from("pets")
     .insert([{ owner_id: user.id, ...body }]);

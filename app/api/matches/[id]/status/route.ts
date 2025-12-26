@@ -1,13 +1,13 @@
 import { createClient } from "@/utils/supabase/server";
-import { auth } from "@clerk/nextjs/server";
+import { getUser } from "@/lib/supabase/server-client";
 import { NextResponse } from "next/server";
 
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const { userId } = await auth();
-  if (!userId) return new NextResponse("Unauthorized", { status: 401 });
+  const user = await getUser();
+  if (!user) return new NextResponse("Unauthorized", { status: 401 });
 
   const { status } = await request.json();
   const supabase = await createClient();

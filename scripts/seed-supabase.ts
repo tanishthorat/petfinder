@@ -13,15 +13,16 @@ async function seed() {
       petfinder_id: String(p.id),
       source: 'PETFINDER',
       name: p.name,
-      species: p.species,
+      species: p.species?.toLowerCase() || 'dog',
       breed: p.breeds?.primary || null,
       age_string: p.age || null,
-      gender: p.gender || null,
-      size: p.size || null,
+      gender: p.gender?.toLowerCase() || null,
+      size: p.size?.toLowerCase()?.replace(' ', '_') || null, // Convert 'Extra Large' to 'extra_large'
       color: p.colors?.primary || null,
       images: p.photos?.map((ph: any) => ph.full) || [],
       description: p.description || null,
       location: p.contact?.address ? `${p.contact.address.city}, ${p.contact.address.state}` : null,
+      status: 'available', // Set proper status
     }));
 
     // Upsert into `pets` table on id
