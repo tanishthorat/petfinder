@@ -10,6 +10,11 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  // Redirect to home or dashboard after auth
-  return NextResponse.redirect(new URL("/swipe", requestUrl.origin));
+  // Use the request origin (should be production URL in production)
+  // This ensures we redirect to the correct domain
+  const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL 
+    ? new URL("/swipe", process.env.NEXT_PUBLIC_SITE_URL)
+    : new URL("/swipe", requestUrl.origin);
+
+  return NextResponse.redirect(redirectUrl);
 }

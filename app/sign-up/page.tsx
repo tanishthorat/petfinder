@@ -6,6 +6,7 @@ import { Button, Input } from "@nextui-org/react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import Link from "next/link";
 import { toast } from "sonner";
+import { getAuthCallbackUrl } from "@/lib/utils/site-url";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -34,7 +35,7 @@ export default function SignUpPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: getAuthCallbackUrl(),
       },
     });
 
@@ -62,7 +63,7 @@ export default function SignUpPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: getAuthCallbackUrl(),
       },
     });
 
