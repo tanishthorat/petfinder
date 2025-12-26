@@ -30,22 +30,30 @@ export default function MatchesClient({ initialMatches = [] }: MatchesClientProp
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">Your Matches</h1>
         <div className="space-y-4">
-          {matches.map((match) => (
-            <Card key={match.id} shadow="sm" isPressable>
-              <Link href={`/matches/${match.id}`}>
-                <CardBody className="flex flex-row items-center space-x-4 p-4">
-                  <Avatar src={match.pet.images[0]} className="w-16 h-16" />
-                  <div className="flex-grow">
-                    <h3 className="text-lg font-semibold">{match.pet.name}</h3>
-                    <p className="text-gray-600">You matched on {new Date(match.matched_at).toLocaleDateString()}</p>
-                  </div>
-                  <Button color="primary" variant="ghost" as="div">
-                    Message
-                  </Button>
-                </CardBody>
-              </Link>
-            </Card>
-          ))}
+          {matches.map((match) => {
+            if (!match.pet) return null;
+            const pet = match.pet;
+            const petImage = pet.images && pet.images.length > 0 
+              ? pet.images[0] 
+              : undefined;
+            
+            return (
+              <Card key={match.id} shadow="sm" isPressable>
+                <Link href={`/matches/${match.id}`}>
+                  <CardBody className="flex flex-row items-center space-x-4 p-4">
+                    <Avatar src={petImage} className="w-16 h-16" />
+                    <div className="flex-grow">
+                      <h3 className="text-lg font-semibold">{pet.name || 'Pet'}</h3>
+                      <p className="text-gray-600">You matched on {new Date(match.matched_at).toLocaleDateString()}</p>
+                    </div>
+                    <Button color="primary" variant="ghost" as="div">
+                      Message
+                    </Button>
+                  </CardBody>
+                </Link>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>

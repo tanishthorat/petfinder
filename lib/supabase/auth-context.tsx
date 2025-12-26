@@ -25,7 +25,8 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     const supabase = getSupabaseBrowserClient();
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data }: { data: { session: any } }) => {
+      const { session } = data;
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
@@ -34,7 +35,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);

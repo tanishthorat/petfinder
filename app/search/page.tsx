@@ -11,5 +11,5 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   const pets = await searchPets(resolvedSearchParams);
 
-  return <SearchClient pets={pets} searchParams={resolvedSearchParams} />;
+  return <SearchClient pets={pets} />;
 }

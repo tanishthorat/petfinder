@@ -50,11 +50,11 @@ function transformSupabasePet(data: any): Pet {
     } : undefined,
     contact: {
       address: {
-        city: data.location?.split(", ")[0] || "",
-        state: data.location?.split(", ")[1] || "",
+        city: data.location_address?.split(", ")[0] || data.location?.split(", ")[0] || "",
+        state: data.location_address?.split(", ")[1] || data.location?.split(", ")[1] || "",
         address1: null,
         address2: null,
-        postcode: null,
+        postcode: "",
         country: "US",
       },
       email: null,
@@ -73,14 +73,22 @@ function transformSupabasePet(data: any): Pet {
       cats: null,
     },
     status: data.status || "available",
-    organization_id: data.organization || null,
-    url: null,
-    colors: null,
+    organization_id: data.organization || "",
+    url: `/pet/${data.id}`,
+    colors: {
+      primary: data.color || null,
+      secondary: null,
+      tertiary: null,
+    },
     coat: null,
     tags: [],
     videos: [],
     published_at: data.created_at,
-    _links: null,
+    _links: {
+      self: { href: `/pet/${data.id}` },
+      type: { href: `#${data.species}` },
+      organization: { href: "#" },
+    },
   } as Pet;
 }
 

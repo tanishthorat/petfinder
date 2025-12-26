@@ -19,10 +19,10 @@ const petSchema = z.object({
   size: z.string().min(1, 'Size is required'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   health_status: z.string().min(3, 'Health status is required'),
-  vaccination_status: z.boolean().default(false),
-  is_neutered: z.boolean().default(false),
-  good_with_kids: z.boolean().default(false),
-  good_with_pets: z.boolean().default(false),
+  vaccination_status: z.boolean(),
+  is_neutered: z.boolean(),
+  good_with_kids: z.boolean(),
+  good_with_pets: z.boolean(),
   images: z.array(z.string()).min(1, 'At least one image is required'),
 });
 
@@ -45,6 +45,10 @@ export default function PostPetPage() {
     resolver: zodResolver(petSchema),
     defaultValues: {
       images: [],
+      vaccination_status: false,
+      is_neutered: false,
+      good_with_kids: false,
+      good_with_pets: false,
     },
   });
   
@@ -150,8 +154,12 @@ export default function PostPetPage() {
           control={control}
           render={({ field }) => (
             <Input 
-              {...field} 
-              onChange={e => field.onChange(parseInt(e.target.value, 10))}
+              {...field}
+              value={field.value?.toString() || ""}
+              onChange={e => {
+                const value = e.target.value;
+                field.onChange(value === "" ? 0 : parseInt(value, 10) || 0);
+              }}
               type="number"
               label="Age (in months)" 
               isInvalid={!!errors.age} 
@@ -178,10 +186,62 @@ export default function PostPetPage() {
 
         {/* Checkboxes */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Controller name="vaccination_status" control={control} render={({ field }) => <Checkbox {...field} isSelected={field.value}>Vaccinated</Checkbox>} />
-          <Controller name="is_neutered" control={control} render={({ field }) => <Checkbox {...field} isSelected={field.value}>Neutered</Checkbox>} />
-          <Controller name="good_with_kids" control={control} render={({ field }) => <Checkbox {...field} isSelected={field.value}>Good with Kids</Checkbox>} />
-          <Controller name="good_with_pets" control={control} render={({ field }) => <Checkbox {...field} isSelected={field.value}>Good with Pets</Checkbox>} />
+          <Controller 
+            name="vaccination_status" 
+            control={control} 
+            render={({ field }) => (
+              <Checkbox 
+                isSelected={field.value} 
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                name={field.name}
+              >
+                Vaccinated
+              </Checkbox>
+            )} 
+          />
+          <Controller 
+            name="is_neutered" 
+            control={control} 
+            render={({ field }) => (
+              <Checkbox 
+                isSelected={field.value} 
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                name={field.name}
+              >
+                Neutered
+              </Checkbox>
+            )} 
+          />
+          <Controller 
+            name="good_with_kids" 
+            control={control} 
+            render={({ field }) => (
+              <Checkbox 
+                isSelected={field.value} 
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                name={field.name}
+              >
+                Good with Kids
+              </Checkbox>
+            )} 
+          />
+          <Controller 
+            name="good_with_pets" 
+            control={control} 
+            render={({ field }) => (
+              <Checkbox 
+                isSelected={field.value} 
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                name={field.name}
+              >
+                Good with Pets
+              </Checkbox>
+            )} 
+          />
         </div>
         
         <Button type="submit" color="primary" size="lg" className="w-full" isLoading={isSubmitting}>

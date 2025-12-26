@@ -20,7 +20,7 @@ type Match = {
 };
 
 interface MatchesListProps {
-  matches: MatchWithPet[];
+  matches: Match[];
 }
 
 export default function MatchesList({ matches }: MatchesListProps) {

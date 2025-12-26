@@ -131,7 +131,7 @@ export async function createPet(pet: {
   }
 
   // Normalize enum values to lowercase
-  const normalizedPet: Record<string, any> = {
+  const normalizedPet: Record<string, unknown> = {
     owner_id: user.id,
     name: pet.name.trim(),
     species: normalizedSpecies,
@@ -168,7 +168,7 @@ export async function createPet(pet: {
     gender: normalizedPet.gender,
     size: normalizedPet.size,
     owner_id: normalizedPet.owner_id,
-    images_count: normalizedPet.images?.length || 0,
+    images_count: imagesArray.length,
   });
 
   const { data, error } = await supabase.from("pets").insert([normalizedPet]).select().single();
@@ -368,13 +368,19 @@ export async function getLikedPets() {
   const matchedPetIds = matches?.map(m => m.pet_id) || [];
   
   const likedPets = likedSwipes
-    .map(s => s.pet)
-    .filter(p => p && !matchedPetIds.includes(p.id));
+    .map(s => {
+      // Handle case where pet might be an array or single object
+      const pet = Array.isArray(s.pet) ? s.pet[0] : s.pet;
+      return pet;
+    })
+    .filter((p): p is NonNullable<typeof p> => {
+      return p !== null && p !== undefined && typeof p === 'object' && 'id' in p && !matchedPetIds.includes(p.id);
+    });
 
   return likedPets;
 }
 
-export async function searchPets(filters: { [key: string]: any }) {
+export async function searchPets(filters: { [key: string]: unknown }) {
   const supabase = await createSupabaseServerClient();
   let query = supabase.from("pets").select("*").eq("status", "available");
 

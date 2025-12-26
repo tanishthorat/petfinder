@@ -28,7 +28,7 @@ export default function ProfileClient({ profile: initialProfile }: { profile: an
     setProfile({ ...profile, [name]: value });
   };
 
-  const handlePreferencesChange = (key: string, value: any) => {
+  const handlePreferencesChange = (key: string, value: unknown) => {
     setPreferences({ ...preferences, [key]: value });
   };
   
@@ -135,7 +135,7 @@ export default function ProfileClient({ profile: initialProfile }: { profile: an
                     <CheckboxGroup
                       orientation="horizontal"
                       value={preferences.size || []}
-                      onValue-change={(value) => handlePreferencesChange('size', value)}
+                      onValueChange={(value: string[]) => handlePreferencesChange('size', value)}
                     >
                       <Checkbox value="small">Small</Checkbox>
                       <Checkbox value="medium">Medium</Checkbox>

@@ -1,3 +1,5 @@
+export type { Match, MatchStatus, User, Message } from "./database";
+
 export interface Pet {
   id: number;
   organization_id: string;

@@ -38,8 +38,13 @@ export default function MapView({ pets }: MapViewProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {pets.filter(p => p.location_lat && p.location_lng).map((pet) => (
-        <Marker key={pet.id} position={[pet.location_lat, pet.location_lng]}>
+      {pets.filter(p => {
+        const petWithLocation = p as Pet & { location_lat?: number; location_lng?: number };
+        return petWithLocation.location_lat && petWithLocation.location_lng;
+      }).map((pet) => {
+        const petWithLocation = pet as Pet & { location_lat?: number; location_lng?: number };
+        return (
+          <Marker key={pet.id} position={[petWithLocation.location_lat!, petWithLocation.location_lng!]}>
           <Popup>
             <Card className="w-48 p-0 shadow-none border-none">
               <Image 
@@ -56,7 +61,8 @@ export default function MapView({ pets }: MapViewProps) {
             </Card>
           </Popup>
         </Marker>
-      ))}
+        );
+      })}
     </MapContainer>
   );
 }

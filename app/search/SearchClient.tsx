@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Button, Input, Select, SelectItem, CheckboxGroup, Checkbox, Tabs, Tab } from "@nextui-org/react";
+import { Button, Input, Select, SelectItem, CheckboxGroup, Checkbox, Tabs, Tab, Pagination } from "@nextui-org/react";
 import PetCard from "@/components/PetCard";
 import MapView from "@/components/MapView";
 import { List, Map } from "lucide-react";

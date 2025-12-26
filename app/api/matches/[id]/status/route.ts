@@ -4,8 +4,9 @@ import { NextResponse } from "next/server";
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const user = await getUser();
   if (!user) return new NextResponse("Unauthorized", { status: 401 });
 
@@ -14,7 +15,7 @@ export async function PUT(
   const { data, error } = await supabase
     .from("matches")
     .update({ status })
-    .eq("id", params.id);
+    .eq("id", id);
 
   if (error) return new NextResponse(error.message, { status: 500 });
   return NextResponse.json(data);

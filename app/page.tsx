@@ -27,7 +27,7 @@ export default function LandingPage() {
       opacity: 1,
       transition: {
         duration: 0.6,
-        ease: "easeOut"
+        ease: [0.4, 0, 0.2, 1] as const // Custom cubic-bezier easing
       }
     }
   };

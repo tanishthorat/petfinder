@@ -7,32 +7,15 @@ import { getPetsFromSupabase } from '@/lib/supabase';
 
 // Use Supabase if configured. Falls back to Petfinder/mock behavior in lib/petfinder.
 
-export async function GET() {
-  try {
-    const pets = await getPetsForSwiping();
-    return NextResponse.json(pets);
-  } catch (error: any) {
-    return new NextResponse(error.message, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
-  const user = await getUser();
-  if (!user) return new NextResponse("Unauthorized", { status: 401 });
-
-  const body = await request.json();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("pets")
-    .insert([{ owner_id: user.id, ...body }]);
-
-  if (error) return new NextResponse(error.message, { status: 500 });
-  return NextResponse.json(data);
-}
-
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    
+    // If no search params, use simple getPetsForSwiping
+    if (searchParams.toString() === '') {
+      const pets = await getPetsForSwiping();
+      return NextResponse.json(pets);
+    }
     
     // Build search parameters from query string
     const params: SearchParams = {};
@@ -103,13 +86,17 @@ export async function GET(request: NextRequest) {
     // If Supabase is configured, attempt to fetch from it first
     let data;
     try {
+      // Convert arrays to single values for Supabase query (takes first value)
+      const ageValue = Array.isArray(params.age) ? params.age[0] : params.age;
+      const sizeValue = Array.isArray(params.size) ? params.size[0] : params.size;
+      
       data = await getPetsFromSupabase({
         type: params.type,
         gender: params.gender,
-        age: params.age as any,
-        size: params.size as any,
-        limit: params.limit ? parseInt(params.limit) : undefined,
-        page: params.page ? parseInt(params.page) : undefined,
+        age: typeof ageValue === 'string' ? ageValue : undefined,
+        size: typeof sizeValue === 'string' ? sizeValue : undefined,
+        limit: typeof params.limit === 'number' ? params.limit : undefined,
+        page: typeof params.page === 'number' ? params.page : undefined,
       });
     } catch (err) {
       console.error('Supabase pets fetch error:', err);
@@ -127,4 +114,18 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function POST(request: Request) {
+  const user = await getUser();
+  if (!user) return new NextResponse("Unauthorized", { status: 401 });
+
+  const body = await request.json();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("pets")
+    .insert([{ owner_id: user.id, ...body }]);
+
+  if (error) return new NextResponse(error.message, { status: 500 });
+  return NextResponse.json(data);
 }

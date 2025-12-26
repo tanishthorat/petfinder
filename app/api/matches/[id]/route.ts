@@ -4,10 +4,11 @@ import { getMatchDetails } from "@/app/actions/messages";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const matchDetails = await getMatchDetails(params.id);
+    const { id } = await params;
+    const matchDetails = await getMatchDetails(id);
     return NextResponse.json(matchDetails);
   } catch (error: any) {
     return new NextResponse(error.message, { status: 500 });

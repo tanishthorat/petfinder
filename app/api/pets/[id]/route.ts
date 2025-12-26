@@ -4,13 +4,14 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("pets")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (error) return new NextResponse(error.message, { status: 500 });
@@ -19,8 +20,9 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const user = await getUser();
   if (!user) return new NextResponse("Unauthorized", { status: 401 });
 
@@ -29,7 +31,7 @@ export async function PUT(
   const { data, error } = await supabase
     .from("pets")
     .update(body)
-    .eq("id", params.id);
+    .eq("id", id);
 
   if (error) return new NextResponse(error.message, { status: 500 });
   return NextResponse.json(data);
@@ -37,8 +39,9 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const user = await getUser();
   if (!user) return new NextResponse("Unauthorized", { status: 401 });
 
@@ -46,7 +49,7 @@ export async function DELETE(
   const { data, error } = await supabase
     .from("pets")
     .delete()
-    .eq("id", params.id);
+    .eq("id", id);
 
   if (error) return new NextResponse(error.message, { status: 500 });
   return new NextResponse(null, { status: 204 });
